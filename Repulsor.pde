@@ -9,12 +9,17 @@ float range; // Range sensitivity to mouse
 float maxSpeed; 
 float maxForce; 
 float mass;
+boolean reversed = false;
+
+	void isReversed(boolean is) {
+		reversed = is; 
+	}
 
 	Repulsor(float x_, float y_, float r_) {
 		// CONTANTS 
 		range = 200; 
 		maxSpeed = 10; 
-		maxForce = 10; 
+		maxForce = 100; 
 		mass = 1;
 		// Initialization
 		pos = new PVector(x_, y_);
@@ -42,6 +47,7 @@ float mass;
 		fill(131, 161, 255, 170);
 		// draw the ellipse
 		ellipseMode(CENTER);
+		
 		ellipse(pos.x, pos.y, r, r);
 	}
 
@@ -52,30 +58,44 @@ float mass;
 
 		// Also create a scalar value to hold the magnitude of the vector
 		float distance = desired.mag(); 
-		// Normalize that shit!
-		desired.normalize();
-		// Multiply by -1 to reverse direction
-		desired.mult(-1);
-		// Check if distance is in range
 		if (distance <= range) {
+			// Normalize that shit!
+			desired.normalize();
+			desired.mult(-1);
+			
+			// Check if distance is in range
 			float m = map(distance, 0, range, maxSpeed, 0); 
 			desired.mult(m);
+			PVector steer = PVector.sub(desired, vel);
+
+			steer.limit(maxForce);
+			applyForce(steer); 
+			move(); 
+			display(); 
 		} else {
-			// The repulsor is not being influenced by the mouse, but is it being 
-			// Multiply by max speed to temper the beast of motion!
-			desired.mult(maxSpeed);
+			// The repulsor is not being influenced by the mouse, and must return home
+			desired = PVector.sub(restPos, pos); // Point towards the rest pos
+			distance = desired.mag(); // Get the distance
+			if (distance <= 10) {
+				pos = restPos.get();
+			} else {
+				desired.normalize(); // normalize it! 
+				float m = map(distance, 0, range, 0, maxSpeed); // get the mapping function ready
+				desired.mult(m); 
+				PVector steer = PVector.sub(desired, vel);
+				steer.limit(maxForce);
+				applyForce(steer); 
+				move(); 
+				display(); 
+			}
 		}
 
 		// So that was fun. 
 		// Now let's steer this sucker. 
-		PVector steer = PVector.sub(desired, vel);
 
-		steer.limit(maxForce);
-		applyForce(steer); 
 		// Zero out the acceleration
-		move(); 
-		display(); 
-		println(pos.x + ", " + pos.y);
+
+		//println(pos.x + ", " + pos.y);
 
 	}
 
